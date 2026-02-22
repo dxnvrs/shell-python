@@ -29,18 +29,19 @@ def main():
             break
         # if the user types "type <command>", check if the command is a shell builtin or an executable in the PATH
         elif cmdName == 'type':
-            if cmdName in BUILTIN:
-                print(f"{cmdName} is a shell builtin")
+            target = args[0]
+            if target in BUILTIN:
+                print(f"{target} is a shell builtin")
             else:
                 found = False
                 for directory in dirs:
                     full_path = os.path.join(directory, cmdName)
                     if os.path.exists(full_path) and os.access(full_path, os.X_OK):
-                        print(f"{cmdName} is {full_path}")
+                        print(f"{target} is {full_path}")
                         found = True
                         break
                 if not found:
-                    print(f"{cmdName}: not found")
+                    print(f"{target}: not found")
         # if the command is not a builtin or an executable in the PATH, print an error message
         else: 
             foundPath = None
@@ -50,7 +51,7 @@ def main():
                     foundPath = full_path 
                     break
             if foundPath:
-                subprocess.run([foundPath] + args)
+                subprocess.run([cmdName] + args, executable=foundPath)
             else:
                 print(f"{cmdName}: command not found")
 
