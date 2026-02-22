@@ -14,6 +14,11 @@ def main():
          # if the user types "exit", break the loop and end the program
         elif command[:4] == 'exit':
             break
+        elif command[:4] == 'type':
+            if command[5:9] == "echo" or command[5:9] == "exit":
+                print(f"{command[5:9]} is a shell builtin")
+            else:
+                print(f"{command[5:]}: not found")
         else: 
             print(f"{command}: command not found")
 
