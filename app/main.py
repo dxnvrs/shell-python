@@ -1,11 +1,15 @@
 import sys
+import os
 
 
 def main():
+    rcvPATH = os.environ.get('PATH')
+    dirs = rcvPATH.split(os.pathsep)
+
     # TODO: Uncomment the code below to pass the first stage
     while True:
         sys.stdout.write("$ ")
-
+        BUILTIN = ['echo', 'exit', 'type']
         # waiting for user's input
         command = input()
        
@@ -15,10 +19,13 @@ def main():
         elif command[:4] == 'exit':
             break
         elif command[:4] == 'type':
-            if command[5:9] == "echo" or command[5:9] == "exit" or command[5:9] == "type":
-                print(f"{command[5:9]} is a shell builtin")
+            if command[5:] in BUILTIN:
+                print(f"{command[5:]} is a shell builtin")
             else:
-                print(f"{command[5:]}: not found")
+                if command[5:] in dirs:
+                    print(f"{command[5:]} is {rcvPATH}")
+                else:
+                    print(f"{command[5:]}: not found")
         else: 
             print(f"{command}: command not found")
 
