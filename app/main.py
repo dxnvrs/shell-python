@@ -22,13 +22,19 @@ def main():
         elif command[:4] == 'exit':
             break
         elif command[:4] == 'type':
-            if command[5:] in BUILTIN:
-                print(f"{command[5:]} is a shell builtin")
+            cmdName = command[5:]
+            if cmdName in BUILTIN:
+                print(f"{cmdName} is a shell builtin")
             else:
-                if os.path.exists(command[5:]):
-                    print(f"{command[5:]} is {rcvPATH}")
-                else:
-                    print(f"{command[5:]}: not found")
+                found = False
+                for directory in dirs:
+                    full_path = os.path.join(directory, cmdName)
+                    if os.path.exists(full_path) and os.access(full_path, os.X_OK):
+                        print(f"{cmdName} is {full_path}")
+                        found = True
+                        break
+                if not found:
+                    print(f"{cmdName}: not found")
         else: 
             print(f"{command}: command not found")
 
