@@ -7,7 +7,7 @@ def main():
 
     # TODO: Uncomment the code below to pass the first stage
     while True:
-        rcvPATH = os.getenv('PATH')
+        rcvPATH = os.environ.get('PATH', '')
         dirs = rcvPATH.split(os.pathsep)
         
         sys.stdout.write("$ ")
