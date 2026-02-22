@@ -3,13 +3,16 @@ import os
 
 
 def main():
-    rcvPATH = os.environ.get('PATH')
-    dirs = rcvPATH.split(os.pathsep)
+    
 
     # TODO: Uncomment the code below to pass the first stage
     while True:
+        rcvPATH = os.environ.get('PATH')
+        dirs = rcvPATH.split(os.pathsep)
+        
         sys.stdout.write("$ ")
         BUILTIN = ['echo', 'exit', 'type']
+        
         # waiting for user's input
         command = input()
        
