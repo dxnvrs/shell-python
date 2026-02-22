@@ -8,7 +8,7 @@ def main():
     # TODO: Uncomment the code below to pass the first stage
     while True:
         rcvPATH = os.environ.get('PATH', '')
-        dirs = rcvPATH.split(os.pathsep)
+        dirs = rcvPATH.split(':')
         
         sys.stdout.write("$ ")
         BUILTIN = ['echo', 'exit', 'type']
