@@ -15,7 +15,7 @@ def main():
         elif command[:4] == 'exit':
             break
         elif command[:4] == 'type':
-            if command[5:9] == "echo" or command[5:9] == "exit":
+            if command[5:9] == "echo" or command[5:9] == "exit" or command[5:9] == "type":
                 print(f"{command[5:9]} is a shell builtin")
             else:
                 print(f"{command[5:]}: not found")
