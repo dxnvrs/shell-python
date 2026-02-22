@@ -8,7 +8,7 @@ def main():
     # TODO: Uncomment the code below to pass the first stage
     while True:
         rcvPATH = os.environ.get('PATH', '')
-        dirs = rcvPATH.split(':')
+        dirs = rcvPATH.split(os.pathsep)
         
         sys.stdout.write("$ ")
         BUILTIN = ['echo', 'exit', 'type']
@@ -25,7 +25,7 @@ def main():
             if command[5:] in BUILTIN:
                 print(f"{command[5:]} is a shell builtin")
             else:
-                if command[5:] in dirs:
+                if os.path.exists(command[5:]):
                     print(f"{command[5:]} is {rcvPATH}")
                 else:
                     print(f"{command[5:]}: not found")
