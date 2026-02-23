@@ -3,7 +3,7 @@ import sys
 import os
 import subprocess
 
-BUILTIN = ['echo', 'exit', 'type', 'pwd']
+BUILTIN = ['echo', 'exit', 'type', 'pwd', 'cd']
 
 def main():
 
@@ -42,11 +42,21 @@ def main():
                         break
                 if not found:
                     print(f"{target}: not found")
+        # if the user types "pwd", print the current working directory
         elif cmdName == 'pwd':
             print(os.getcwd())
+        elif cmdName == 'cd':
+            if args:
+                try:
+                    os.chdir(args[0])
+                except FileNotFoundError:
+                    print(f"cd: {args[0]}: No such file or directory")
+            else:
+                os.chdir(os.path.expanduser('~'))
         # if the command is not a builtin or an executable in the PATH, print an error message
         else: 
             foundPath = None
+            # Search for the command in the directories specified in PATH
             for directory in dirs:
                 full_path = os.path.join(directory, cmdName)
                 if os.path.exists(full_path) and os.access(full_path, os.X_OK):
