@@ -102,18 +102,16 @@ def main():
                     if stdoutFile:
                         os.makedirs(os.path.dirname(os.path.abspath(stdoutFile)), exist_ok=True)  # Ensure the directory exists
                         outStream = open(stdoutFile, 'w')
+                    
                     if stderrFile:
                         os.makedirs(os.path.dirname(os.path.abspath(stderrFile)), exist_ok=True)  # Ensure the directory exists
                         errStream = open(stderrFile, 'w')
-                except OSError as e:
-                    print(f"Error opening output file: {e}")
-                    continue
                 
                     subprocess.run(
                             [cmdName] + args, 
-                            executable=foundPath, 
-                            stdout=outStream if outStream else sys.stdout,
-                            stderr=errStream if errStream else sys.stderr
+                        executable=foundPath, 
+                        stdout=outStream if outStream else sys.stdout,
+                        stderr=errStream if errStream else sys.stderr
                         )
                 finally:
                     if outStream:
