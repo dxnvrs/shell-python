@@ -61,7 +61,7 @@ def main():
 
         cmd, args = final_args[0], final_args[1:] 
 
-        def execute_output(content_stdout="None", content_stderr="None"):
+        def execute_output(content_stdout, content_stderr):
             if stdout_file:
                 parent = os.path.dirname(os.path.abspath(stdout_file))
                 if parent:
