@@ -61,14 +61,28 @@ def main():
 
         cmd, args = final_args[0], final_args[1:] 
 
-        def execute_output(content):
+        def execute_output(content_stdout="None", content_stderr="None"):
             if stdout_file:
-                os.makedirs(os.path.dirname(os.path.abspath(stdout_file)), exist_ok=True)
+                parent = os.path.dirname(os.path.abspath(stdout_file))
+                if parent:
+                    os.makedirs(parent, exist_ok=True)
                 with open(stdout_file, stdout_mode) as f:
-                    f.write(content)
-            else:
-                sys.stdout.write(content)
+                    if content_stdout:
+                        f.write(content_stdout)
+            elif content_stdout:
+                sys.stdout.write(content_stdout)
                 sys.stdout.flush()
+            
+            if stderr_file:
+                parent = os.path.dirname(os.path.abspath(stderr_file))
+                if parent:
+                    os.makedirs(parent, exist_ok=True)
+                with open(stderr_file, 'w') as f:
+                    if content_stderr:
+                        f.write(content_stderr)
+            elif content_stderr:
+                sys.stderr.write(content_stderr)
+                sys.stderr.flush()
 
         # --- Lógica de Comandos ---
         if cmd == 'echo':
