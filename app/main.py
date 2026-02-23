@@ -27,6 +27,7 @@ def main():
         stdout_file = None
         stderr_file = None
         stdout_mode = 'w'
+        stderr_mode = "w"
         final_args = []
         
         # Extração de redirecionadores (trata >, 1>, 2>)
@@ -49,12 +50,14 @@ def main():
             elif parts[idx] == '2>':
                 if idx + 1 < len(parts):
                     stderr_file = parts[idx + 1]
+                    stderr_mode = 'w'
                     idx += 2
                 else:
                     idx += 1
             elif parts[idx] == '2>>':
                 if idx + 1 < len(parts):
                     stderr_file = parts[idx + 1]
+                    stderr_mode = 'a'
                     idx += 2
                 else:
                     idx += 1
