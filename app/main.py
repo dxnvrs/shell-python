@@ -3,6 +3,8 @@ import sys
 import os
 import subprocess
 
+BUILTIN = ['echo', 'exit', 'type', 'pwd']
+
 def main():
 
     while True:
@@ -11,7 +13,6 @@ def main():
         dirs = rcvPATH.split(os.pathsep)
         
         sys.stdout.write("$ ")
-        BUILTIN = ['echo', 'exit', 'type']
         
         # waiting for user's input
         command = input()
@@ -41,6 +42,8 @@ def main():
                         break
                 if not found:
                     print(f"{target}: not found")
+        elif cmdName == 'pwd':
+            print(os.getcwd())
         # if the command is not a builtin or an executable in the PATH, print an error message
         else: 
             foundPath = None
