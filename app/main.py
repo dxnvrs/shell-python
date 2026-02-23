@@ -100,18 +100,22 @@ def main():
                 errStream = None
                 try:
                     if stdoutFile:
-                        os.makedirs(os.path.dirname(os.path.abspath(stdoutFile)), exist_ok=True)  # Ensure the directory exists
+                        parentDir = os.path.dirname(stdoutFile)
+                        if parentDir:
+                            os.makedirs(parentDir, exist_ok=True)  # Ensure the directory exists
                         outStream = open(stdoutFile, 'w')
                     
                     if stderrFile:
-                        os.makedirs(os.path.dirname(os.path.abspath(stderrFile)), exist_ok=True)  # Ensure the directory exists
+                        parentDir = os.path.dirname(stderrFile)
+                        if parentDir:
+                            os.makedirs(parentDir, exist_ok=True)  # Ensure the directory exists
                         errStream = open(stderrFile, 'w')
                 
                     subprocess.run(
                         [cmdName] + args, 
                         executable=foundPath, 
-                        stdout=outStream if outStream else None,
-                        stderr=errStream if errStream else None
+                        stdout=outStream if outStream else sys.stdout,
+                        stderr=errStream if errStream else sys.stderr
                         )
                 except Exception as e:
                     print(f"Error executing command: {e}")
