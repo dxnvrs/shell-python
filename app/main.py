@@ -146,7 +146,7 @@ def main():
                         out_f = open(stdout_file, stdout_mode)
                     if stderr_file:
                         os.makedirs(os.path.dirname(os.path.abspath(stderr_file)), exist_ok=True)
-                        err_f = open(stderr_file, 'w')
+                        err_f = open(stderr_file, stderr_mode)
 
                     # Passamos o nome do comando como argv[0] para satisfazer o tester
                     subprocess.run(
