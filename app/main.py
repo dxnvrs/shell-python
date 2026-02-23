@@ -14,65 +14,59 @@ def main():
         sys.stdout.flush()
         
         try:
-            command = input()
+            line = sys.stdin.readline()
+            if not line: break
+            command = line.strip()
         except EOFError:
             break
 
+        if not command: continue
         parts = shlex.split(command)
         if not parts: continue
 
         stdoutFile = None
         stderrFile = None
 
-        # Captura redirecionamento de saída
-        for op in ['>', '1>']:
-            if op in parts:
-                idx = parts.index(op)
-                stdoutFile = parts[idx + 1]
-                parts = parts[:idx] + parts[idx+2:]
-                break
-
-        # Captura redirecionamento de erro
-        if '2>' in parts:
-            idx = parts.index('2>')
-            stderrFile = parts[idx + 1]
-            parts = parts[:idx] + parts[idx+2:]
+        # 1. Extração rigorosa dos redirecionadores
+        new_parts = []
+        i = 0
+        while i < len(parts):
+            if parts[i] in ['>', '1>'] and i + 1 < len(parts):
+                stdoutFile = parts[i+1]
+                i += 2
+            elif parts[i] == '2>' and i + 1 < len(parts):
+                stderrFile = parts[i+1]
+                i += 2
+            else:
+                new_parts.append(parts[i])
+                i += 1
         
+        parts = new_parts
         if not parts: continue
         cmdName = parts[0]
         args = parts[1:]
 
+        # 2. Função de impressão que respeita os redirecionamentos
         def shellPrint(content, isError=False):
-            targetPath = stderrFile if isError else stdoutFile
-            if targetPath:
-                pDir = os.path.dirname(targetPath)
-                if pDir:
-                    os.makedirs(pDir, exist_ok=True)
-                with open(targetPath, 'w') as f:
+            target = stderrFile if isError else stdoutFile
+            if target:
+                pDir = os.path.dirname(os.path.abspath(target))
+                if pDir: os.makedirs(pDir, exist_ok=True)
+                with open(target, 'w') as f:
                     f.write(content + '\n')
             else:
                 if isError:
                     sys.stderr.write(content + '\n')
                     sys.stderr.flush()
                 else:
-                    print(content)
+                    sys.stdout.write(content + '\n')
+                    sys.stdout.flush()
 
+        # --- Lógica de Comandos ---
         if cmdName == 'echo':
             shellPrint(" ".join(args))
         elif cmdName == 'exit':
-            if args and args[0] == '0':
-                sys.exit(0)
-            break
-        elif cmdName == 'type':
-            target = args[0]
-            if target in BUILTIN:
-                shellPrint(f"{target} is a shell builtin")
-            else:
-                found_path = next((os.path.join(d, target) for d in dirs if os.path.isfile(os.path.join(d, target)) and os.access(os.path.join(d, target), os.X_OK)), None)
-                if found_path:
-                    shellPrint(f"{target} is {found_path}")
-                else:
-                    shellPrint(f"{target}: not found")
+            sys.exit(0)
         elif cmdName == 'pwd':
             shellPrint(os.getcwd())
         elif cmdName == 'cd':
@@ -81,36 +75,52 @@ def main():
                 os.chdir(dest)
             except FileNotFoundError:
                 shellPrint(f"cd: {dest}: No such file or directory", isError=True)
-
-        else: 
-            foundPath = next((os.path.join(d, cmdName) for d in dirs if os.path.isfile(os.path.join(d, cmdName)) and os.access(os.path.join(d, cmdName), os.X_OK)), None)
+        elif cmdName == 'type':
+            target = args[0]
+            if target in BUILTIN:
+                shellPrint(f"{target} is a shell builtin")
+            else:
+                found = False
+                for d in dirs:
+                    p = os.path.join(d, target)
+                    if os.path.isfile(p) and os.access(p, os.X_OK):
+                        shellPrint(f"{target} is {p}")
+                        found = True
+                        break
+                if not found: shellPrint(f"{target}: not found")
+        
+        # --- Programas Externos ---
+        else:
+            foundPath = None
+            for d in dirs:
+                p = os.path.join(d, cmdName)
+                if os.path.isfile(p) and os.access(p, os.X_OK):
+                    foundPath = p
+                    break
             
             if foundPath:
-                out_s = None
-                err_s = None
+                out_f = None
+                err_f = None
                 try:
-                    # ORDEM CORRETA: 1.makedirs -> 2.open
                     if stdoutFile:
-                        pDir = os.path.dirname(stdoutFile)
-                        if pDir: os.makedirs(pDir, exist_ok=True)
-                        out_s = open(stdoutFile, 'w')
-                    
+                        os.makedirs(os.path.dirname(os.path.abspath(stdoutFile)), exist_ok=True)
+                        out_f = open(stdoutFile, 'w')
                     if stderrFile:
-                        pDir = os.path.dirname(stderrFile)
-                        if pDir: os.makedirs(pDir, exist_ok=True)
-                        err_s = open(stderrFile, 'w')
-                    
+                        os.makedirs(os.path.dirname(os.path.abspath(stderrFile)), exist_ok=True)
+                        err_f = open(stderrFile, 'w')
+
                     subprocess.run(
-                        [cmdName] + args, 
-                        executable=foundPath, 
-                        stdout=out_s if out_s else sys.stdout,
-                        stderr=err_s if err_s else sys.stderr
+                        [cmdName] + args,
+                        executable=foundPath,
+                        stdout=out_f if out_f else sys.stdout,
+                        stderr=err_f if err_f else sys.stderr
                     )
                 finally:
-                    if out_s: out_s.close()
-                    if err_s: err_s.close()
+                    if out_f: out_f.close()
+                    if err_f: err_f.close()
             else:
-                print(f"{cmdName}: command not found")
+                # Se o comando não existe, o erro deve ir para o stderrFile se ele existir!
+                shellPrint(f"{cmdName}: command not found", isError=True)
 
 if __name__ == "__main__":
     main()
