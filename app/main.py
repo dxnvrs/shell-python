@@ -91,13 +91,14 @@ def main():
                     foundPath = full_path 
                     break
             if foundPath:
+                fullArgs = [cmdName]+args
                 if outputFile:
                     os.makedirs(os.path.dirname(outputFile), exist_ok=True)  # Ensure the directory exists
 
                     with open(outputFile, 'w') as f:
-                        subprocess.run([foundPath] + args, stdout=f)
+                        subprocess.run(fullArgs, executable=foundPath, stdout=f)
                 else:
-                    subprocess.run([foundPath] + args)
+                    subprocess.run(fullArgs, executable=foundPath)
             else:
                 print(f"{cmdName}: command not found")
        
