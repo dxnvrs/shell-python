@@ -25,8 +25,11 @@ def main():
         for i in ['>', '1>']:
             if i in parts:
                 index = parts.index(i)
-                outputFile = parts[index + 1]
-                parts = parts[:index]  + parts[index+2] # Remove the redirection part from the command
+                if index+1 < len(parts):
+                    outputFile = parts[index + 1]
+                    parts = parts[:index] # Remove the redirection part from the command
+                else:
+                    parts = parts[:index] # Remove the redirection part from the command
                 break
         if not parts: continue
         
