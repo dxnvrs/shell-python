@@ -67,9 +67,9 @@ def main():
                 if parent:
                     os.makedirs(parent, exist_ok=True)
                 with open(stdout_file, stdout_mode) as f:
-                    if content_stdout:
+                    if content_stdout is not None:
                         f.write(content_stdout)
-            elif content_stdout:
+            elif content_stdout is not None:
                 sys.stdout.write(content_stdout)
                 sys.stdout.flush()
             
@@ -78,9 +78,9 @@ def main():
                 if parent:
                     os.makedirs(parent, exist_ok=True)
                 with open(stderr_file, 'w') as f:
-                    if content_stderr:
+                    if content_stderr is not None:
                         f.write(content_stderr)
-            elif content_stderr:
+            elif content_stderr is not None:
                 sys.stderr.write(content_stderr)
                 sys.stderr.flush()
 
