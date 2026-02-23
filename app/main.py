@@ -7,120 +7,141 @@ BUILTIN = ['echo', 'exit', 'type', 'pwd', 'cd']
 
 def main():
     while True:
-        rcvPATH = os.environ.get('PATH', '')
-        dirs = rcvPATH.split(os.pathsep)
-        
         sys.stdout.write("$ ")
         sys.stdout.flush()
         
-        try:
-            line = sys.stdin.readline()
-            if not line: break
-            command = line.strip()
-        except EOFError:
-            break
+        line = sys.stdin.readline()
+        if not line: break
+        command_line = line.strip()
+        if not command_line: continue
 
-        if not command: continue
-        parts = shlex.split(command)
-        if not parts: continue
-
-        stdoutFile = None
-        stderrFile = None
-
-        # 1. Extração rigorosa dos redirecionadores
-        new_parts = []
+        # shlex split ajuda com aspas, mas vamos limpar os operadores manualmente depois
+        parts = shlex.split(command_line)
+        
+        stdout_file = None
+        stderr_file = None
+        clean_parts = []
+        
         i = 0
         while i < len(parts):
-            if parts[i] in ['>', '1>'] and i + 1 < len(parts):
-                stdoutFile = parts[i+1]
-                i += 2
-            elif parts[i] == '2>' and i + 1 < len(parts):
-                stderrFile = parts[i+1]
-                i += 2
-            else:
-                new_parts.append(parts[i])
+            # Trata > e 1>
+            if parts[i] in ['>', '1>']:
+                if i + 1 < len(parts):
+                    stdout_file = parts[i+1]
+                    i += 2
+                    continue
+            # Trata 2>
+            elif parts[i] == '2>':
+                if i + 1 < len(parts):
+                    stderr_file = parts[i+1]
+                    i += 2
+                    continue
+            # Caso o operador esteja colado: '2>/tmp/file' (shlex às vezes mantém junto)
+            elif parts[i].startswith('2>') and len(parts[i]) > 2:
+                stderr_file = parts[i][2:]
                 i += 1
-        
-        parts = new_parts
-        if not parts: continue
-        cmdName = parts[0]
-        args = parts[1:]
+                continue
+            elif (parts[i].startswith('>') or parts[i].startswith('1>')) and len(parts[i]) > 1:
+                # Ajuste para >/tmp/file ou 1>/tmp/file
+                stdout_file = parts[i].split('>', 1)[1]
+                i += 1
+                continue
+            
+            clean_parts.append(parts[i])
+            i += 1
 
-        # 2. Função de impressão que respeita os redirecionamentos
-        def shellPrint(content, isError=False):
-            target = stderrFile if isError else stdoutFile
-            if target:
-                pDir = os.path.dirname(os.path.abspath(target))
-                if pDir: os.makedirs(pDir, exist_ok=True)
-                with open(target, 'w') as f:
-                    f.write(content + '\n')
+        if not clean_parts: continue
+        cmd_name = clean_parts[0]
+        args = clean_parts[1:]
+
+        # --- Helper para garantir que o arquivo e diretório existam ---
+        def get_file_handle(path):
+            if not path: return None
+            # Força o caminho absoluto para evitar erros de diretório
+            abs_path = os.path.abspath(path)
+            parent = os.path.dirname(abs_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            return open(abs_path, 'w')
+
+        # --- Lógica de Execução ---
+        if cmd_name == 'echo':
+            output = " ".join(args) + "\n"
+            if stdout_file:
+                with get_file_handle(stdout_file) as f: f.write(output)
             else:
-                if isError:
-                    sys.stderr.write(content + '\n')
-                    sys.stderr.flush()
-                else:
-                    sys.stdout.write(content + '\n')
-                    sys.stdout.flush()
-
-        # --- Lógica de Comandos ---
-        if cmdName == 'echo':
-            shellPrint(" ".join(args))
-        elif cmdName == 'exit':
+                sys.stdout.write(output)
+        
+        elif cmd_name == 'exit':
             sys.exit(0)
-        elif cmdName == 'pwd':
-            shellPrint(os.getcwd())
-        elif cmdName == 'cd':
+            
+        elif cmd_name == 'pwd':
+            output = os.getcwd() + "\n"
+            if stdout_file:
+                with get_file_handle(stdout_file) as f: f.write(output)
+            else:
+                sys.stdout.write(output)
+
+        elif cmd_name == 'cd':
             dest = os.path.expanduser('~') if not args or args[0] == '~' else args[0]
             try:
                 os.chdir(dest)
             except FileNotFoundError:
-                shellPrint(f"cd: {dest}: No such file or directory", isError=True)
-        elif cmdName == 'type':
+                err_msg = f"cd: {dest}: No such file or directory\n"
+                if stderr_file:
+                    with get_file_handle(stderr_file) as f: f.write(err_msg)
+                else:
+                    sys.stderr.write(err_msg)
+
+        elif cmd_name == 'type':
             target = args[0]
+            msg = ""
             if target in BUILTIN:
-                shellPrint(f"{target} is a shell builtin")
+                msg = f"{target} is a shell builtin\n"
             else:
-                found = False
-                for d in dirs:
+                path_env = os.environ.get("PATH", "").split(os.pathsep)
+                found = None
+                for d in path_env:
                     p = os.path.join(d, target)
                     if os.path.isfile(p) and os.access(p, os.X_OK):
-                        shellPrint(f"{target} is {p}")
-                        found = True
+                        found = p
                         break
-                if not found: shellPrint(f"{target}: not found")
-        
-        # --- Programas Externos ---
+                msg = f"{target} is {found}\n" if found else f"{target}: not found\n"
+            
+            if stdout_file:
+                with get_file_handle(stdout_file) as f: f.write(msg)
+            else:
+                sys.stdout.write(msg)
+
         else:
-            foundPath = None
-            for d in dirs:
-                p = os.path.join(d, cmdName)
+            # Comandos Externos
+            path_env = os.environ.get("PATH", "").split(os.pathsep)
+            found_path = None
+            for d in path_env:
+                p = os.path.join(d, cmd_name)
                 if os.path.isfile(p) and os.access(p, os.X_OK):
-                    foundPath = p
+                    found_path = p
                     break
             
-            if foundPath:
-                out_f = None
-                err_f = None
+            if found_path:
+                out_h = get_file_handle(stdout_file)
+                err_h = get_file_handle(stderr_file)
                 try:
-                    if stdoutFile:
-                        os.makedirs(os.path.dirname(os.path.abspath(stdoutFile)), exist_ok=True)
-                        out_f = open(stdoutFile, 'w')
-                    if stderrFile:
-                        os.makedirs(os.path.dirname(os.path.abspath(stderrFile)), exist_ok=True)
-                        err_f = open(stderrFile, 'w')
-
                     subprocess.run(
-                        [cmdName] + args,
-                        executable=foundPath,
-                        stdout=out_f if out_f else sys.stdout,
-                        stderr=err_f if err_f else sys.stderr
+                        [cmd_name] + args,
+                        executable=found_path,
+                        stdout=out_h if out_h else sys.stdout,
+                        stderr=err_h if err_h else sys.stderr
                     )
                 finally:
-                    if out_f: out_f.close()
-                    if err_f: err_f.close()
+                    if out_h: out_h.close()
+                    if err_h: err_h.close()
             else:
-                # Se o comando não existe, o erro deve ir para o stderrFile se ele existir!
-                shellPrint(f"{cmdName}: command not found", isError=True)
+                err_msg = f"{cmd_name}: command not found\n"
+                if stderr_file:
+                    with get_file_handle(stderr_file) as f: f.write(err_msg)
+                else:
+                    sys.stderr.write(err_msg)
 
 if __name__ == "__main__":
     main()
