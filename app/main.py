@@ -52,6 +52,12 @@ def main():
                     idx += 2
                 else:
                     idx += 1
+            elif parts[idx] == '2>>':
+                if idx + 1 < len(parts):
+                    stderr_file = parts[idx + 1]
+                    idx += 2
+                else:
+                    idx += 1
             else:
                 final_args.append(parts[idx])
                 idx += 1
