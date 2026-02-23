@@ -28,12 +28,12 @@ def main():
         if '>' in parts or '1>' in parts:
             op = '>' if '>' in parts else '1>'
             idx = parts.index(op)
-            stdout_file = parts[idx + 1]
+            stdoutFile = parts[idx + 1]
             parts = parts[:idx] + parts[idx+2:]
 
         if '2>' in parts:
             idx = parts.index('2>')
-            stderr_file = parts[idx + 1]
+            stderrFile = parts[idx + 1]
             parts = parts[:idx] + parts[idx+2:]
 
         if not parts: continue
