@@ -4,12 +4,11 @@ import os
 import subprocess
 
 def main():
-    # Get the PATH environment variable and split it into directories
-    rcvPATH = os.environ.get('PATH', '')
-    dirs = rcvPATH.split(os.pathsep)
 
     while True:
-        
+        # Get the PATH environment variable and split it into directories
+        rcvPATH = os.environ.get('PATH', '')
+        dirs = rcvPATH.split(os.pathsep)
         
         sys.stdout.write("$ ")
         BUILTIN = ['echo', 'exit', 'type']
@@ -35,7 +34,7 @@ def main():
             else:
                 found = False
                 for directory in dirs:
-                    full_path = os.path.join(directory, cmdName)
+                    full_path = os.path.join(directory, target)
                     if os.path.exists(full_path) and os.access(full_path, os.X_OK):
                         print(f"{target} is {full_path}")
                         found = True
