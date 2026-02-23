@@ -9,7 +9,7 @@ BUILTIN = ['echo', 'exit', 'type', 'pwd', 'cd']
 def main():
 
     while True:
-        # Get the PATH environment variable and split it into directories
+        # get the PATH environment variable and split it into directories
         rcvPATH = os.environ.get('PATH', '')
         dirs = rcvPATH.split(os.pathsep)
         
@@ -17,10 +17,33 @@ def main():
         
         # waiting for user's input
         command = input()
-        # Split the command into the command name and its arguments using shlex.split to handle quoted strings properly
+        # split the command into the command name and its arguments using shlex.split to handle quoted strings properly
         parts = shlex.split(command)  
         cmdName = parts[0]
         args = parts[1:]
+
+        if '>' in args or '1>' in args:
+            # Handle output redirection
+            output_file = None
+            if '>' in args:
+                output_file = args[args.index('>') + 1]
+            elif '1>' in args:
+                output_file = args[args.index('1>') + 1]
+            
+            # Remove redirection arguments from args list
+            filtered_args = []
+            skip_next = False
+            for arg in args:
+                if skip_next:
+                    skip_next = False
+                    continue
+                if arg == '>' or arg == '1>':
+                    skip_next = True
+                    continue
+                filtered_args.append(arg)
+
+            with open(output_file, 'w') as f:
+                subprocess.run([cmdName] + filtered_args, stdout=f, stderr=f)
        
         if cmdName == 'echo':
             print(" ".join(args))
