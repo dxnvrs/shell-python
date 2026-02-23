@@ -2,6 +2,7 @@ import cmd
 import sys
 import os
 import subprocess
+import shlex
 
 BUILTIN = ['echo', 'exit', 'type', 'pwd', 'cd']
 
@@ -16,7 +17,8 @@ def main():
         
         # waiting for user's input
         command = input()
-        parts = command.split()  
+        # Split the command into the command name and its arguments using shlex.split to handle quoted strings properly
+        parts = shlex.split(command)  
         cmdName = parts[0]
         args = parts[1:]
        
