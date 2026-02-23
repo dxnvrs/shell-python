@@ -20,19 +20,23 @@ def main():
         # split the command into the command name and its arguments using shlex.split to handle quoted strings properly
         parts = shlex.split(command)  
         
+        stdoutFile = None
+        stderrFile = None
+
         outputFile = None
 
-        for i in ['>', '1>']:
-            if i in parts:
-                index = parts.index(i)
-                if index+1 < len(parts):
-                    outputFile = parts[index + 1]
-                    parts = parts[:index] # Remove the redirection part from the command
-                else:
-                    parts = parts[:index] # Remove the redirection part from the command
-                break
-        if not parts: 
-            continue
+        if '>' in parts or '1>' in parts:
+            op = '>' if '>' in parts else '1>'
+            idx = parts.index(op)
+            stdout_file = parts[idx + 1]
+            parts = parts[:idx] + parts[idx+2:]
+
+        if '2>' in parts:
+            idx = parts.index('2>')
+            stderr_file = parts[idx + 1]
+            parts = parts[:idx] + parts[idx+2:]
+
+        if not parts: continue
         
         cmdName = parts[0]
         args = parts[1:]
@@ -91,14 +95,31 @@ def main():
                     foundPath = full_path 
                     break
             if foundPath:
-                fullArgs = [cmdName]+args
-                if outputFile:
-                    os.makedirs(os.path.dirname(outputFile), exist_ok=True)  # Ensure the directory exists
 
-                    with open(outputFile, 'w') as f:
-                        subprocess.run(fullArgs, executable=foundPath, stdout=f)
-                else:
-                    subprocess.run(fullArgs, executable=foundPath)
+                outStream = None
+                errStream = None
+                try:
+                    if stdoutFile:
+                        os.makedirs(os.path.dirname(os.path.abspath(stdoutFile)), exist_ok=True)  # Ensure the directory exists
+                        outStream = open(stdoutFile, 'w')
+                    if stderrFile:
+                        os.makedirs(os.path.dirname(os.path.abspath(stderrFile)), exist_ok=True)  # Ensure the directory exists
+                        errStream = open(stderrFile, 'w')
+                except OSError as e:
+                    print(f"Error opening output file: {e}")
+                    continue
+                
+                    subprocess.run(
+                            [cmdName] + args, 
+                            executable=foundPath, 
+                            stdout=outStream if outStream else sys.stdout,
+                            stderr=errStream if errStream else sys.stderr
+                        )
+                finally:
+                    if outStream:
+                        outStream.close()
+                    if errStream:
+                        errStream.close()
             else:
                 print(f"{cmdName}: command not found")
        
