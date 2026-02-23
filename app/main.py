@@ -4,7 +4,7 @@ import subprocess
 import shlex
 
 def main():
-    # Mapeamento de builtins para facilitar a busca
+    # List of built-in commands we support.
     BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd']
 
     while True:
@@ -19,7 +19,6 @@ def main():
         if not command_line:
             continue
 
-        # shlex lida com aspas, mas precisamos extrair os redirecionadores manualmente
         try:
             parts = shlex.split(command_line)
         except ValueError:
@@ -27,14 +26,23 @@ def main():
 
         stdout_file = None
         stderr_file = None
+        stdout_mode = 'w'
         final_args = []
         
         # Extração de redirecionadores (trata >, 1>, 2>)
         idx = 0
         while idx < len(parts):
-            if parts[idx] in ['>', '1>']:
+            if parts[idx] in ['>>', '1>>']:
                 if idx + 1 < len(parts):
                     stdout_file = parts[idx + 1]
+                    stdout_mode = 'a'
+                    idx += 2
+                else:
+                    idx += 1
+            elif parts[idx] in ['>', '1>']:
+                if idx + 1 < len(parts):
+                    stdout_file = parts[idx + 1]
+                    stdout_mode = 'w'
                     idx += 2
                 else:
                     idx += 1
@@ -51,41 +59,26 @@ def main():
         if not final_args:
             continue
 
-        cmd = final_args[0]
-        args = final_args[1:]
+        cmd, args = final_args[0], final_args[1:] 
 
-        # --- Função Mestra de Escrita ---
-        # Ela garante que o diretório exista e abre o arquivo corretamente
-        def execute_output(content_stdout=None, content_stderr=None):
-            # Trata STDOUT
+        def execute_output(content):
             if stdout_file:
                 os.makedirs(os.path.dirname(os.path.abspath(stdout_file)), exist_ok=True)
-                with open(stdout_file, 'w') as f:
-                    if content_stdout is not None:
-                        f.write(content_stdout)
-            elif content_stdout is not None:
-                sys.stdout.write(content_stdout)
+                with open(stdout_file, stdout_mode) as f:
+                    f.write(content)
+            else:
+                sys.stdout.write(content)
                 sys.stdout.flush()
 
-            # Trata STDERR
-            if stderr_file:
-                os.makedirs(os.path.dirname(os.path.abspath(stderr_file)), exist_ok=True)
-                with open(stderr_file, 'w') as f:
-                    if content_stderr is not None:
-                        f.write(content_stderr)
-            elif content_stderr is not None:
-                sys.stderr.write(content_stderr)
-                sys.stderr.flush()
-
         # --- Lógica de Comandos ---
-        if cmd == 'exit':
-            sys.exit(0)
-
-        elif cmd == 'echo':
-            execute_output(content_stdout=" ".join(args) + "\n")
+        if cmd == 'echo':
+            execute_output(" ".join(args) + "\n")
 
         elif cmd == 'pwd':
-            execute_output(content_stdout=os.getcwd() + "\n")
+            execute_output(os.getcwd() + "\n")
+
+        elif cmd == 'exit':
+            sys.exit(0)
 
         elif cmd == 'cd':
             path = os.path.expanduser('~') if not args or args[0] == '~' else args[0]
@@ -127,7 +120,7 @@ def main():
                 try:
                     if stdout_file:
                         os.makedirs(os.path.dirname(os.path.abspath(stdout_file)), exist_ok=True)
-                        out_f = open(stdout_file, 'w')
+                        out_f = open(stdout_file, stdout_mode)
                     if stderr_file:
                         os.makedirs(os.path.dirname(os.path.abspath(stderr_file)), exist_ok=True)
                         err_f = open(stderr_file, 'w')
