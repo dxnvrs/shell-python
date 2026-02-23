@@ -108,11 +108,13 @@ def main():
                         errStream = open(stderrFile, 'w')
                 
                     subprocess.run(
-                            [cmdName] + args, 
+                        [cmdName] + args, 
                         executable=foundPath, 
-                        stdout=outStream if outStream else sys.stdout,
-                        stderr=errStream if errStream else sys.stderr
+                        stdout=outStream if outStream else None,
+                        stderr=errStream if errStream else None
                         )
+                except Exception as e:
+                    print(f"Error executing command: {e}")
                 finally:
                     if outStream:
                         outStream.close()
