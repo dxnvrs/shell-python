@@ -31,7 +31,8 @@ def main():
                 else:
                     parts = parts[:index] # Remove the redirection part from the command
                 break
-        if not parts: continue
+        if not parts: 
+            continue
         
         cmdName = parts[0]
         args = parts[1:]
@@ -90,7 +91,13 @@ def main():
                     foundPath = full_path 
                     break
             if foundPath:
-                subprocess.run([cmdName] + args, executable=foundPath)
+                if outputFile:
+                    os.makedirs(os.path.dirname(outputFile), exist_ok=True)  # Ensure the directory exists
+
+                    with open(outputFile, 'w') as f:
+                        subprocess.run([foundPath] + args, stdout=f)
+                else:
+                    subprocess.run([foundPath] + args)
             else:
                 print(f"{cmdName}: command not found")
        
