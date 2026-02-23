@@ -86,7 +86,7 @@ def main():
                 parent = os.path.dirname(os.path.abspath(stderr_file))
                 if parent:
                     os.makedirs(parent, exist_ok=True)
-                with open(stderr_file, 'w') as f:
+                with open(stderr_file, stderr_mode) as f:
                     if content_stderr is not None:
                         f.write(content_stderr)
             elif content_stderr is not None:
