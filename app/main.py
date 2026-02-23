@@ -41,12 +41,20 @@ def main():
         cmdName = parts[0]
         args = parts[1:]
 
-        def shellPrint(content):
-            if outputFile:
-                with open(outputFile, 'w') as f:
+        def shellPrint(content, isError=False):
+            targetPath = stderrFile if isError else stdoutFile
+            if targetPath:
+                pDir = os.path.dirname(targetPath)
+                if pDir:
+                    os.makedirs(pDir, exist_ok=True)  # Ensure the directory exists
+                with open(targetPath, 'w') as f:
                     f.write(content + '\n')
             else:
-                print(content)
+                if isError:
+                    sys.stderr.write(content + '\n')
+                    sys.stderr.flush()
+                else:
+                    print(content)
         
        
         if cmdName == 'echo':
