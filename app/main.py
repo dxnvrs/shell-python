@@ -19,24 +19,24 @@ def main():
         command = input()
         # split the command into the command name and its arguments using shlex.split to handle quoted strings properly
         parts = shlex.split(command)  
-        
+        if not parts: continue
+
         stdoutFile = None
         stderrFile = None
 
         outputFile = None
 
-        if '>' in parts or '1>' in parts:
-            op = '>' if '>' in parts else '1>'
-            idx = parts.index(op)
-            stdoutFile = parts[idx + 1]
-            parts = parts[:idx] + parts[idx+2:]
+        for op in ['>', '1>']:
+            if op in parts:
+                idx = parts.index(op)
+                stdoutFile = parts[idx + 1]
+                parts = parts[:idx] + parts[idx+2:]
+                break
 
         if '2>' in parts:
             idx = parts.index('2>')
             stderrFile = parts[idx + 1]
             parts = parts[:idx] + parts[idx+2:]
-
-        if not parts: continue
         
         cmdName = parts[0]
         args = parts[1:]
@@ -95,43 +95,21 @@ def main():
 
         # if the command is not a builtin or an executable in the PATH, print an error message
         else: 
-            foundPath = None
-            # Search for the command in the directories specified in PATH
-            for directory in dirs:
-                full_path = os.path.join(directory, cmdName)
-                if os.path.exists(full_path) and os.access(full_path, os.X_OK):
-                    foundPath = full_path 
-                    break
+            # Programas Externos
+            foundPath = next((os.path.join(d, cmdName) for d in dirs if os.path.isfile(os.path.join(d, cmdName)) and os.access(os.path.join(d, cmdName), os.X_OK)), None)
+            
             if foundPath:
-
-                outStream = None
-                errStream = None
-                try:
-                    if stdoutFile:
-                        parentDir = os.path.dirname(stdoutFile)
-                        if parentDir:
-                            os.makedirs(parentDir, exist_ok=True)  # Ensure the directory exists
-                        outStream = open(stdoutFile, 'w')
-                    
-                    if stderrFile:
-                        parentDir = os.path.dirname(stderrFile)
-                        if parentDir:
-                            os.makedirs(parentDir, exist_ok=True)  # Ensure the directory exists
-                        errStream = open(stderrFile, 'w')
+                out_s = open(stdoutFile, 'w') if stdoutFile else None
+                err_s = open(stderrFile, 'w') if stderrFile else None
                 
-                    subprocess.run(
-                        [cmdName] + args, 
-                        executable=foundPath, 
-                        stdout=outStream if outStream else sys.stdout,
-                        stderr=errStream if errStream else sys.stderr
-                        )
-                except Exception as e:
-                    print(f"Error executing command: {e}")
+                if out_s and os.path.dirname(stdoutFile): os.makedirs(os.path.dirname(stdoutFile), exist_ok=True)
+                if err_s and os.path.dirname(stderrFile): os.makedirs(os.path.dirname(stderrFile), exist_ok=True)
+                
+                try:
+                    subprocess.run([cmdName] + args, executable=foundPath, stdout=out_s if out_s else sys.stdout, stderr=err_s if err_s else sys.stderr)
                 finally:
-                    if outStream:
-                        outStream.close()
-                    if errStream:
-                        errStream.close()
+                    if out_s: out_s.close()
+                    if err_s: err_s.close()
             else:
                 print(f"{cmdName}: command not found")
        
