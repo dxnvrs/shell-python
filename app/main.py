@@ -45,14 +45,17 @@ def main():
         # if the user types "pwd", print the current working directory
         elif cmdName == 'pwd':
             print(os.getcwd())
+        # if the user types "cd <directory>", change the current working directory to the specified directory. If no directory is specified, change to the user's home directory. If the specified directory does not exist, print an error message
         elif cmdName == 'cd':
-            if args:
+            if args != '~' and args:
                 try:
                     os.chdir(args[0])
                 except FileNotFoundError:
                     print(f"cd: {args[0]}: No such file or directory")
             else:
+                # If no directory is specified or the argument is '~', change to the user's home directory
                 os.chdir(os.path.expanduser('~'))
+
         # if the command is not a builtin or an executable in the PATH, print an error message
         else: 
             foundPath = None
