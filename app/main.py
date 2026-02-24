@@ -24,7 +24,7 @@ def main():
         sys.stdout.write("$ ")
         sys.stdout.flush()
         
-        line = sys.stdin.readline()
+        line = input()
         if not line:
             break
         
