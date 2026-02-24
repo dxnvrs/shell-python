@@ -2,11 +2,24 @@ import sys
 import os
 import subprocess
 import shlex
+import readline
 
 def main():
     # List of built-in commands we support.
     BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd']
+    def completer(text, state):
+        options = [c for c in BUILTINS if c.startswith(text)]
 
+        if state < len(options):
+            return options[state] + " "
+        else:
+            return None
+    readline.set_completer(completer)
+    if "libedit" in readline.__doc__:
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind("tab: complete")
+    
     while True:
         sys.stdout.write("$ ")
         sys.stdout.flush()
@@ -16,13 +29,14 @@ def main():
             break
         
         command_line = line.strip()
+        
         if not command_line:
             continue
 
         try:
             parts = shlex.split(command_line)
         except ValueError:
-            continue # Erro de aspas mal formadas
+            continue
 
         stdout_file = None
         stderr_file = None
