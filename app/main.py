@@ -4,40 +4,47 @@ import subprocess
 import shlex
 import readline
 
+readline.parse_and_bind('set bell-style audible')
+readline.parse_and_bind('set show-all-if-ambiguous on')
+readline.parse_and_bind('set completion-query-items -1')
+
 def main():
     # List of built-in commands we support.
     BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd']
-    
-    def get_builtin_completions():
+
+    def get_matches(text):
         execs = set(BUILTINS)
-        pathEnv = os.environ.get("PATH", "")
+        pathEnv = os.environ.get("PATH", "").split(os.pathsep)
 
-        if not pathEnv:
-            return execs
-
-        directories = pathEnv.split(os.pathsep)
-
-        for directory in directories:
+        for directory in pathEnv:
             if os.path.isdir(directory):
                 try:
                     for filename in os.listdir(directory):
-                        full_path = os.path.join(directory, filename)
-                        if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                            execs.add(filename)
+                        if filename.startswith(text):
+                            full_path = os.path.join(directory, filename)
+                            if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                                execs.add(filename)
                 except PermissionError:
                     continue
-        return execs
+        return sorted([c for c in execs if c.startswith(text)])
     
     def completer(text, state):
-        all_commands = sorted(list(get_builtin_completions()))
+        matches = get_matches(text)
 
-        options = [c for c in all_commands if c.startswith(text)]
+        if state < len(matches):
+            if len(matches) == 1:
+                return matches[state] + " "
+            return matches[state]
+        return None
+    
+    def display_matches(substitution, matches, longest_match_len):
+        print()
+        print("  ".join(matches[1:]))
+        sys.stdout.write(f"$ {readline.get_line_buffer()}")
+        sys.stdout.flush()
 
-        if state < len(options):
-            return options[state] + " "
-        else:
-            return None
     readline.set_completer(completer)
+    readline.set_completion_display_matches_hook(display_matches)
     if "libedit" in readline.__doc__:
         readline.parse_and_bind("bind ^I rl_complete")
     else:
