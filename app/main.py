@@ -7,8 +7,31 @@ import readline
 def main():
     # List of built-in commands we support.
     BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd']
+    
+    def get_builtin_completions():
+        execs = set(BUILTINS)
+        pathEnv = os.environ.get("PATH", "")
+
+        if not pathEnv:
+            return execs
+
+        directories = pathEnv.split(os.pathsep)
+
+        for directory in directories:
+            if os.path.isdir(directory):
+                try:
+                    for filename in os.listdir(directory):
+                        full_path = os.path.join(directory, filename)
+                        if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                            execs.add(filename)
+                except PermissionError:
+                    continue
+        return execs
+    
     def completer(text, state):
-        options = [c for c in BUILTINS if c.startswith(text)]
+        all_commands = sorted(list(get_builtin_completions()))
+
+        options = [c for c in all_commands if c.startswith(text)]
 
         if state < len(options):
             return options[state] + " "
