@@ -7,6 +7,18 @@ import readline
 tab_count = 0
 last_text = ""
 
+def get_lcp(strs):
+    if not strs:
+        return ""
+    
+    prefix = strs[0]
+    for s in strs[1:]:
+        while not s.startswith(prefix):
+            prefix = prefix[:-1]
+            if not prefix:
+                return ""
+    return prefix
+
 def main():
     # List of built-in commands we support.
     BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd']
@@ -33,14 +45,21 @@ def main():
 
         if not matches:
             return None
-        if len(matches) == 1:
-            return matches[state] + " " if state < 1 else None
+        
         if state == 0:
             if text == last_text:
                 tab_count += 1
             else:
                 tab_count = 1
                 last_text = text
+            
+            if len(matches) == 1:
+                return matches[0] + " "
+                
+            lcp = get_lcp(matches)
+            if lcp != text:
+                return lcp
+
             if tab_count == 1:
                 sys.stdout.write("\x07")
                 sys.stdout.flush()
@@ -77,6 +96,8 @@ def main():
             continue
 
         try:
+            tab_count = 0
+            last_text = ""
             parts = shlex.split(command_line)
         except ValueError:
             continue
