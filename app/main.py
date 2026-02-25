@@ -102,6 +102,32 @@ def main():
         except ValueError:
             continue
 
+        if '|' in command_line:
+            cmd_parts = command_line.split("|")
+
+            cmds = [shlex.split(c.strip()) for c in cmd_parts]
+            if len(cmds) == 2:
+                cmd1_args = cmds[0]
+                cmd2_args = cmds[1]
+
+                try:
+                    p1 = subprocess.Popen(
+                        cmd1_args,
+                        stdout=subprocess.PIPE,
+                        stderr=sys.stderr
+                    )
+                    p2 = subprocess.Popen(
+                        cmd2_args,
+                        stdin=p1.stdout,
+                        stdout=sys.stdout,
+                        stderr=sys.stderr
+                    )
+                    p1.stdout.close()
+                    p2.communicate()
+                except Exception as e:
+                    print(f"Error in pipeline: {e}")
+            continue
+
         stdout_file = None
         stderr_file = None
         stdout_mode = 'w'
