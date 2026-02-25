@@ -4,9 +4,8 @@ import subprocess
 import shlex
 import readline
 
-readline.parse_and_bind('set bell-style audible')
-readline.parse_and_bind('set show-all-if-ambiguous on')
-readline.parse_and_bind('set completion-query-items -1')
+tab_count = 0
+last_text = ""
 
 def main():
     # List of built-in commands we support.
@@ -24,27 +23,41 @@ def main():
                             full_path = os.path.join(directory, filename)
                             if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                                 execs.add(filename)
-                except PermissionError:
+                except:
                     continue
         return sorted([c for c in execs if c.startswith(text)])
     
     def completer(text, state):
+        global tab_count, last_text
         matches = get_matches(text)
 
-        if state < len(matches):
-            if len(matches) == 1:
-                return matches[state] + " "
-            return matches[state]
+        if not matches:
+            return None
+        if len(matches) == 1:
+            return matches[state] + " " if state < 1 else None
+        if state == 0:
+            if text == last_text:
+                tab_count += 1
+            else:
+                tab_count = 1
+                last_text = text
+            if tab_count == 1:
+                sys.stdout.write("\x07")
+                sys.stdout.flush()
+                return None
+            elif tab_count >= 2:
+                print()
+                print("  ".join(matches))
+                sys.stdout.write(f"$ {readline.get_line_buffer()}")
+                sys.stdout.flush()
+
+                tab_count = 0
+                return None
         return None
-    
-    def display_matches(substitution, matches, longest_match_len):
-        print()
-        print("  ".join(matches[1:]))
-        sys.stdout.write(f"$ {readline.get_line_buffer()}")
-        sys.stdout.flush()
 
     readline.set_completer(completer)
-    readline.set_completion_display_matches_hook(display_matches)
+    readline.parse_and_bind('set show-all-if-ambiguous off')
+
     if "libedit" in readline.__doc__:
         readline.parse_and_bind("bind ^I rl_complete")
     else:
