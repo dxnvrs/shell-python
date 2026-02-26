@@ -45,6 +45,8 @@ def run_builtin(cmd, args):
         except FileNotFoundError:
             sys.stderr.write(f"cd: {path}: No such file or directory\n")
     elif cmd == 'history':
+        global last_synced_index
+
         if args and args[0] == '-r':
             file_path = args[1]
             try:
@@ -68,6 +70,20 @@ def run_builtin(cmd, args):
                         f.write(entry + "\n")
             except Exception: pass
             return
+        elif args and args[0] == '-a' and len(args) > 1:
+            file_path = args[1]
+            try:
+                parent_dir = os.path.dirname(os.path.abspath(file_path))
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
+                
+                new_entries = command_history[last_synced_index:]
+                with open(file_path, 'a') as f:
+                    for entry in new_entries:
+                        f.write(entry + "\n")
+                last_synced_index = len(command_history)
+            except Exception: pass
+            return None
         else:
             if args and args[0].isdigit():
                 n = int(args[0])
