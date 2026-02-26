@@ -179,53 +179,50 @@ def main():
         if not command_line:
             continue
 
-        # Pipeline logic
+        # multi-stage pipeline logic
         if '|' in command_line:
             cmd_parts = command_line.split("|")
             cmds = [shlex.split(c.strip()) for c in cmd_parts]
 
-            if len(cmds) == 2:
-                r_fd, w_fd = os.pipe()
+            processes = []
+            prev_read_fd = None
 
-                cmd1_args = cmds[0]
-                cmd2_args = cmds[1]
+            for i, cmd_args in enumerate(cmds):
+                is_first = (i == 0)
+                is_last = (i == len(cmds) - 1)
 
-                args1, out_f1, out_m1, err_f1, err_m1 = parse_redirections(cmd1_args)
+                current_stdin = prev_read_fd if not is_first else None
 
-                err_h1 = None
-                if err_f1:
-                    os.makedirs(os.path.dirname(os.path.abspath(err_f1)), exist_ok=True)
-                    err_h1 = open(err_f1, err_m1)
+                current_stdout = None
+                if not is_last:
+                    r_fd, w_fd = os.pipe()
+                    current_stdout = w_fd
+                    prev_read_fd = r_fd
+                else:
+                    cmd_args, out_f, out_m, err_f, err_m = parse_redirections(cmd_args)
+                    if out_f:
+                        os.makedirs(os.path.dirname(os.path.abspath(out_f)), exist_ok=True)
+                        current_stdout = open(out_f, out_m)
+                p = execute_command(cmd_args, stdin=current_stdin, stdout=current_stdout)
 
-                p1 = execute_command(args1, stdout=w_fd, stderr=err_h1)
+                if not is_last and isinstance(current_stdout, int):
+                    os.close(current_stdout)
+                if current_stdin is not None:
+                    os.close(current_stdin)
 
-                try:
-                    os.close(w_fd)
-                except OSError: pass
+                if p:
+                    processes.append((p, current_stdout if not isinstance(current_stdout, int) else None))
+                else:
+                    if is_last and current_stdout and not isinstance(current_stdout, int):
+                        current_stdout.close()
 
-                args2, out_f2, out_m2, err_f2, err_m2 = parse_redirections(cmd2_args)
-
-                final_out = None
-                if out_f2:
-                    os.makedirs(os.path.dirname(os.path.abspath(out_f2)), exist_ok=True)
-                    final_out = open(out_f2, out_m2)
-
-                final_err = None
-                if err_f2:
-                    os.makedirs(os.path.dirname(os.path.abspath(err_f2)), exist_ok=True)
-                    final_err = open(err_f2, err_m2)
-
-                p2 = execute_command(args2, stdin=r_fd, stdout=final_out, stderr=final_err)
-                try:
-                    os.close(r_fd)
-                except OSError: pass
-
-                if p1: p1.wait()
-                if p2: p2.wait()
-
-                if err_h1: err_h1.close()
-                if final_out: final_out.close()
-                if final_err: final_err.close()
+            for proc, file_handle in processes:
+                proc.wait()
+                if file_handle:
+                    file_handle.close()
+            
+            tab_count = 0
+            last_text = ""
             continue
 
         try:
