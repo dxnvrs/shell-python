@@ -45,15 +45,27 @@ def run_builtin(cmd, args):
         except FileNotFoundError:
             sys.stderr.write(f"cd: {path}: No such file or directory\n")
     elif cmd == 'history':
-        if args and args[0].isdigit():
-            n = int(args[0])
-            display_list = command_history[-n:] if n>0 else []
-            start_index = len(command_history) - len(display_list) + 1
+        if args and args[0] == '-r' and len(args) > 1:
+            file_path = args[1]
+            try:
+                with open(file_path, 'r') as f:
+                    for line in f:
+                        clean_line = line.strip()
+                        if clean_line:
+                            command_history.append(clean_line)
+                            readline.add_history(clean_line)
+            except FileNotFoundError:
+                pass
         else:
-            display_list = command_history
-            start_index = 1
-        for i, entry in enumerate(display_list, start_index):
-            sys.stdout.write(f"{i:5} {entry}\n")
+            if args and args[0].isdigit():
+                n = int(args[0])
+                display_list = command_history[-n:] if n>0 else []
+                start_index = len(command_history) - len(display_list) + 1
+            else:
+                display_list = command_history
+                start_index = 1
+            for i, entry in enumerate(display_list, start_index):
+                sys.stdout.write(f"{i:5} {entry}\n")
     elif cmd == 'type':
         target = args[0]
         if target in BUILTINS:
@@ -194,6 +206,7 @@ def main():
 
         command_history.append(command_line)
         readline.add_history(command_line)
+        execute_command(shlex.split(command_line))
 
         # multi-stage pipeline logic
         if '|' in command_line:
