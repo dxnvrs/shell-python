@@ -217,6 +217,18 @@ def main():
     readline.set_auto_history(False)
     readline.parse_and_bind('set show-all-if-ambiguous off')
 
+    hist_file_path = os.environ.get("HISTFILE")
+    if hist_file_path and os.path.exists(hist_file_path):
+        try:
+            with open(hist_file_path, 'r') as f:
+                for l in f:
+                    cl = line.strip('\n')
+                    if cl:
+                        command_history.append(cl)
+                        readline.add_history(cl)
+            last_synced_index = len(command_history)
+        except Exception: pass
+
     if "libedit" in readline.__doc__:
         readline.parse_and_bind("bind ^I rl_complete")
     else:
