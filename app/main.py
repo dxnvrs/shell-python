@@ -193,6 +193,7 @@ def main():
             continue
 
         command_history.append(command_line)
+        readline.add_history(command_history)
 
         # multi-stage pipeline logic
         if '|' in command_line:
