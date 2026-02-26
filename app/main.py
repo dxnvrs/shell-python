@@ -45,16 +45,16 @@ def run_builtin(cmd, args):
         except FileNotFoundError:
             sys.stderr.write(f"cd: {path}: No such file or directory\n")
     elif cmd == 'history':
-        if args and args[0] == '-r' and len(args) > 1:
+        if args and args[0] == '-r':
             file_path = args[1]
             try:
                 with open(file_path, 'r') as f:
                     for line in f:
-                        clean_line = line.strip()
+                        clean_line = line.strip('\n')
                         if clean_line:
                             command_history.append(clean_line)
                             readline.add_history(clean_line)
-            except FileNotFoundError:
+            except Exception:
                 pass
         else:
             if args and args[0].isdigit():
@@ -65,7 +65,7 @@ def run_builtin(cmd, args):
                 display_list = command_history
                 start_index = 1
             for i, entry in enumerate(display_list, start_index):
-                sys.stdout.write(f"{i:5} {entry}\n")
+                sys.stdout.write(f"{i:5}  {entry}\n")
     elif cmd == 'type':
         target = args[0]
         if target in BUILTINS:
@@ -204,9 +204,8 @@ def main():
         if not command_line:
             continue
 
-        command_history.append(command_line)
-        readline.add_history(command_line)
-        execute_command(shlex.split(command_line))
+        command_history.append(line)
+        readline.add_history(line)
 
         # multi-stage pipeline logic
         if '|' in command_line:
@@ -249,7 +248,7 @@ def main():
                 proc.wait()
                 if file_handle:
                     file_handle.close()
-            
+
             tab_count = 0
             last_text = ""
             continue
@@ -260,15 +259,14 @@ def main():
 
         args, out_f, out_m, err_f, err_m = parse_redirections(parts)
 
-        out_h = None
+        out_h = open(out_f, out_m) if out_f else None
+        err_h = open(err_f, err_m) if err_f else None
+
         if out_f:
             os.makedirs(os.path.dirname(os.path.abspath(out_f)), exist_ok=True)
-            out_h = open(out_f, out_m)
 
-        err_h = None
         if err_f:
             os.makedirs(os.path.dirname(os.path.abspath(err_f)), exist_ok=True)
-            err_h = open(err_f, err_m)
 
         p = execute_command(args, stdout=out_h, stderr=err_h)
 
