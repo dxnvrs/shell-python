@@ -62,11 +62,13 @@ def execute_command(args, stdin=None, stdout=None, stderr=None):
             old_stdin, old_stdout = sys.stdin, sys.stdout
             try:
                 if stdin is not None:
-                    sys.stdin = os.fdopen(stdin, 'r') if isinstance(stdin, int) else stdin
+                    sys.stdin = os.fdopen(os.dup(stdin), 'r') if isinstance(stdin, int) else stdin
                 if stdout is not None:
                     sys.stdout = os.fdopen(os.dup(stdout), 'w') if isinstance(stdout, int) else stdout
                 run_builtin(cmd_name, args[1:])
             finally:
+                if sys.stdin != old_stdin: sys.stdin.close()
+                if sys.stdout != old_stdout: sys.stdout.close()
                 sys.stdin, sys.stdout = old_stdin, old_stdout
             return None
         else:
