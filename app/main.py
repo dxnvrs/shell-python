@@ -198,7 +198,10 @@ def main():
                     err_h1 = open(err_f1, err_m1)
 
                 p1 = execute_command(args1, stdout=w_fd, stderr=err_h1)
-                os.close(w_fd)
+                
+                try:
+                    os.close(w_fd)
+                except OSError: pass
 
                 args2, out_f2, out_m2, err_f2, err_m2 = parse_redirections(cmd2_args)
 
@@ -213,7 +216,9 @@ def main():
                     final_err = open(err_f2, err_m2)
 
                 p2 = execute_command(args2, stdin=r_fd, stdout=final_out, stderr=final_err)
-                os.close(r_fd)
+                try:
+                    os.close(r_fd)
+                except OSError: pass
 
                 if p1: p1.wait()
                 if p2: p2.wait()
