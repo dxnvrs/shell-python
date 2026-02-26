@@ -38,7 +38,7 @@ def run_builtin(cmd, args):
     elif cmd == 'pwd':
         sys.stdout.write(os.getcwd() + "\n")
     elif cmd == 'cd':
-        path = args[0] if args else os.path.expanduser("~")
+        path = os.path.expanduser('~') if not args or args[0] == '~' else os.path.expanduser(args[0])
         try:
             os.chdir(path)
         except FileNotFoundError:
