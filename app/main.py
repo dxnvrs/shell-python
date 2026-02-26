@@ -211,10 +211,13 @@ def completer(text, state):
             return None
     return None
 def main():
+    global command_history, last_synced_index
+    try:
+        readline.set_auto_history(False)
+    except AttributeError: pass
 
     readline.set_completer(completer)
     readline.write_history_file = lambda x: None
-    readline.set_auto_history(False)
     readline.parse_and_bind('set show-all-if-ambiguous off')
 
     hist_file_path = os.environ.get("HISTFILE")
