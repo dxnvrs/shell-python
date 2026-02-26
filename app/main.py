@@ -172,6 +172,8 @@ def completer(text, state):
 def main():
 
     readline.set_completer(completer)
+    readline.write_history_file = lambda x: None
+    readline.set_auto_history(False)
     readline.parse_and_bind('set show-all-if-ambiguous off')
 
     if "libedit" in readline.__doc__:
