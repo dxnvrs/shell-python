@@ -47,7 +47,7 @@ def run_builtin(cmd, args):
     elif cmd == 'history':
         if args and args[0].isdigit():
             n = int(args[0])
-            display_list = command_history(-n:) if n>0 else []
+            display_list = command_history[-n:] if n>0 else []
             start_index = len(command_history) - len(display_list) + 1
         else:
             display_list = command_history
