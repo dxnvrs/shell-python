@@ -36,6 +36,7 @@ def run_builtin(cmd, args):
         output = " ".join(args)
         sys.stdout.write(output + "\n")
     elif cmd == 'exit':
+        save_history_to_histfile()
         sys.exit(0)
     elif cmd == 'pwd':
         sys.stdout.write(os.getcwd() + "\n")
@@ -210,6 +211,18 @@ def completer(text, state):
             tab_count = 0
             return None
     return None
+def save_history_to_histfile():
+    hist_file_path = os.environ.get("HISTFILE")
+    if hist_file_path:
+        try:
+            parent_dir = os.path.dirname(os.path.abspath(hist_file_path))
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
+
+            with open(hist_file_path, 'w') as f:
+                for entry in command_history:
+                    f.write(entry + "\n")
+        except Exception: pass
 def main():
     global command_history, last_synced_index
     try:
@@ -239,8 +252,14 @@ def main():
 
     while True:
 
-        line = input("$ ")
+        try:
+            line = input("$ ")
+        except EOFError:
+            save_history_to_histfile()
+            print()
+            break
         if not line:
+            save_history_to_histfile()
             break
 
         command_line = line.strip()
