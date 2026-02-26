@@ -45,9 +45,15 @@ def run_builtin(cmd, args):
         except FileNotFoundError:
             sys.stderr.write(f"cd: {path}: No such file or directory\n")
     elif cmd == 'history':
-        for i, entry in enumerate(command_history, 1):
+        if args and args[0].isdigit():
+            n = int(args[0])
+            display_list = command_history(-n:) if n>0 else []
+            start_index = len(command_history) - len(display_list) + 1
+        else:
+            display_list = command_history
+            start_index = 1
+        for i, entry in enumerate(display_list, start_index):
             sys.stdout.write(f"{i:5} {entry}\n")
-            
     elif cmd == 'type':
         target = args[0]
         if target in BUILTINS:
