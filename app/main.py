@@ -31,7 +31,7 @@ def find_in_path(cmd):
 
 def run_builtin(cmd, args):
     if cmd == 'echo':
-        output = " ".join(args).replace("\\n", "\n")
+        output = " ".join(args)
         sys.stdout.write(output + "\n")
     elif cmd == 'exit':
         sys.exit(0)
@@ -64,7 +64,7 @@ def execute_command(args, stdin=None, stdout=None, stderr=None):
                 if stdin is not None:
                     sys.stdin = os.fdopen(stdin, 'r') if isinstance(stdin, int) else stdin
                 if stdout is not None:
-                    sys.stdout = os.fdopen(stdout, 'w') if isinstance(stdout, int) else stdout
+                    sys.stdout = os.fdopen(os.dup(stdout, 'w')) if isinstance(stdout, int) else stdout
                 run_builtin(cmd_name, args[1:])
             finally:
                 sys.stdin, sys.stdout = old_stdin, old_stdout
@@ -198,7 +198,7 @@ def main():
                     err_h1 = open(err_f1, err_m1)
 
                 p1 = execute_command(args1, stdout=w_fd, stderr=err_h1)
-                
+
                 try:
                     os.close(w_fd)
                 except OSError: pass
