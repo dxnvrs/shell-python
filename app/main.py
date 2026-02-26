@@ -160,23 +160,32 @@ def parse_redirections(args):
             final_args.append(args[idx])
             idx += 1
     return final_args, stdout_file, stdout_mode, stderr_file, stderr_mode
-
 def get_matches(text):
-    execs = set(BUILTINS)
-    pathEnv = os.environ.get("PATH", "").split(os.pathsep)
+    line_buffer = readline.get_line_buffer()
 
-    for directory in pathEnv:
-        if os.path.isdir(directory):
-            try:
-                for filename in os.listdir(directory):
-                    if filename.startswith(text):
-                        full_path = os.path.join(directory, filename)
-                        if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                            execs.add(filename)
-            except:
-                continue
-    return sorted([c for c in execs if c.startswith(text)])
+    if ' ' in line_buffer.lstrip():
+        curr_dir = os.getcwd()
+        try:
+            files = os.listdir(curr_dir)
+            matches = [f for f in files if f.startswith(text)]
+            return sorted(matches)
+        except Exception:
+            return []
+    else:
+        execs = set(BUILTINS)
+        pathEnv = os.environ.get("PATH", "").split(os.pathsep)
 
+        for directory in pathEnv:
+            if os.path.isdir(directory):
+                try:
+                    for filename in os.listdir(directory):
+                        if filename.startswith(text):
+                            full_path = os.path.join(directory, filename)
+                            if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                                execs.add(filename)
+                except Exception:
+                    continue
+        return sorted([c for c in execs if c.startswith(text)])
 def completer(text, state):
     global tab_count, last_text
     matches = get_matches(text)
