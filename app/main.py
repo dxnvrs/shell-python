@@ -182,10 +182,8 @@ def main():
         readline.parse_and_bind("tab: complete")
 
     while True:
-        sys.stdout.write("$ ")
-        sys.stdout.flush()
 
-        line = input()
+        line = input("$ ")
         if not line:
             break
 
