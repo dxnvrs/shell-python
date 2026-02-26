@@ -225,7 +225,7 @@ def main():
         try:
             with open(hist_file_path, 'r') as f:
                 for l in f:
-                    cl = line.strip('\n')
+                    cl = l.strip('\n')
                     if cl:
                         command_history.append(cl)
                         readline.add_history(cl)
