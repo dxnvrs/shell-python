@@ -7,6 +7,7 @@ import readline
 tab_count = 0
 last_text = ""
 command_history = []
+last_synced_index = 0
 
 # List of built-in commands we support.
 BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd', 'history']
@@ -76,7 +77,7 @@ def run_builtin(cmd, args):
                 parent_dir = os.path.dirname(os.path.abspath(file_path))
                 if parent_dir:
                     os.makedirs(parent_dir, exist_ok=True)
-                
+
                 new_entries = command_history[last_synced_index:]
                 with open(file_path, 'a') as f:
                     for entry in new_entries:
