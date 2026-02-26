@@ -6,9 +6,10 @@ import readline
 
 tab_count = 0
 last_text = ""
+command_history = []
 
 # List of built-in commands we support.
-BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd']
+BUILTINS = ['echo', 'exit', 'type', 'pwd', 'cd', 'history']
 def get_lcp(strs):
     if not strs:
         return ""
@@ -43,6 +44,10 @@ def run_builtin(cmd, args):
             os.chdir(path)
         except FileNotFoundError:
             sys.stderr.write(f"cd: {path}: No such file or directory\n")
+    elif cmd == 'history':
+        for i, entry in enumerate(command_history, 1):
+            sys.stdout.write(f"{i:5} {entry}\n")
+            
     elif cmd == 'type':
         target = args[0]
         if target in BUILTINS:
@@ -180,6 +185,8 @@ def main():
 
         if not command_line:
             continue
+
+        command_history.append(command_line)
 
         # multi-stage pipeline logic
         if '|' in command_line:
