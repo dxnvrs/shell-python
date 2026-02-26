@@ -56,6 +56,18 @@ def run_builtin(cmd, args):
                             readline.add_history(clean_line)
             except Exception:
                 pass
+        elif args and args[0] == '-w' and len(args) > 1:
+            file_path = args[1]
+            try:
+                parent_dir = os.path.dirname(os.path.abspath(file_path))
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
+
+                with open(file_path, 'w') as f:
+                    for entry in command_history:
+                        f.write(entry + "\n")
+            except Exception: pass
+            return
         else:
             if args and args[0].isdigit():
                 n = int(args[0])
